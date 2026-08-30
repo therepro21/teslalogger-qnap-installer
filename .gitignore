@@ -1,0 +1,7 @@
+.env
+.env.upstream
+docker-compose.yml
+docker-compose.qnap.yml
+backup/
+invoices/
+mysql/
