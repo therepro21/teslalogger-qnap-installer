@@ -62,8 +62,77 @@ set_env() {
     printf '%s=%s\n' "$key" "$value" >> "$file"
   fi
 }
+
+get_env() {
+  key="$1"; fallback="$2"
+  value="$(sed -n "s/^${key}=//p" .env | tail -n 1)"
+  printf '%s\n' "${value:-$fallback}"
+}
+
+port_is_available() {
+  port="$1"; owner="$2"
+
+  # Ein bereits laufender Container dieses Stacks darf seinen Port behalten.
+  docker_users="$(docker ps --filter "publish=$port" --format '{{.Names}}' 2>/dev/null || true)"
+  if [ -n "$docker_users" ]; then
+    for docker_user in $docker_users; do
+      [ "$docker_user" = "$owner" ] || return 1
+    done
+    return 0
+  fi
+
+  if have ss; then
+    ss -lnt 2>/dev/null | awk 'NR > 1 {print $4}' | grep -Eq "[:.]${port}$" && return 1
+  elif have netstat; then
+    netstat -lnt 2>/dev/null | awk 'NR > 2 {print $4}' | grep -Eq "[:.]${port}$" && return 1
+  fi
+  return 0
+}
+
+select_port() {
+  preferred="$1"; owner="$2"; label="$3"
+  case "$preferred" in
+    ''|*[!0-9]*) die "Ungueltiger Port fuer $label: $preferred" ;;
+  esac
+  [ "$preferred" -ge 1 ] && [ "$preferred" -le 65535 ] || die "Ungueltiger Port fuer $label: $preferred"
+
+  candidate="$preferred"
+  last=$((preferred + 99))
+  [ "$last" -le 65535 ] || last=65535
+  while [ "$candidate" -le "$last" ]; do
+    if port_is_available "$candidate" "$owner"; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+    candidate=$((candidate + 1))
+  done
+  die "Kein freier Port fuer $label im Bereich $preferred-$last gefunden."
+}
+
 set_env APPDATA_PATH "$INSTALL_DIR"
 set_env TZ "${TZ:-Europe/Berlin}"
+
+PREFERRED_TESLALOGGER_PORT="${TESLALOGGER_PORT:-$(get_env TESLALOGGER_PORT 5010)}"
+PREFERRED_GRAFANA_PORT="${GRAFANA_PORT:-$(get_env GRAFANA_PORT 3000)}"
+PREFERRED_WEBSERVER_PORT="${WEBSERVER_PORT:-$(get_env WEBSERVER_PORT 8888)}"
+
+TESLALOGGER_PORT_SELECTED="$(select_port "$PREFERRED_TESLALOGGER_PORT" teslalogger TeslaLogger)"
+GRAFANA_PORT_SELECTED="$(select_port "$PREFERRED_GRAFANA_PORT" teslalogger-grafana Grafana)"
+WEBSERVER_PORT_SELECTED="$(select_port "$PREFERRED_WEBSERVER_PORT" teslalogger-webserver Admin-Oberflaeche)"
+
+set_env TESLALOGGER_PORT "$TESLALOGGER_PORT_SELECTED"
+set_env GRAFANA_PORT "$GRAFANA_PORT_SELECTED"
+set_env WEBSERVER_PORT "$WEBSERVER_PORT_SELECTED"
+
+if [ "$PREFERRED_TESLALOGGER_PORT" != "$TESLALOGGER_PORT_SELECTED" ]; then
+  say "Port $PREFERRED_TESLALOGGER_PORT ist belegt; TeslaLogger verwendet $TESLALOGGER_PORT_SELECTED."
+fi
+if [ "$PREFERRED_GRAFANA_PORT" != "$GRAFANA_PORT_SELECTED" ]; then
+  say "Port $PREFERRED_GRAFANA_PORT ist belegt; Grafana verwendet $GRAFANA_PORT_SELECTED."
+fi
+if [ "$PREFERRED_WEBSERVER_PORT" != "$WEBSERVER_PORT_SELECTED" ]; then
+  say "Port $PREFERRED_WEBSERVER_PORT ist belegt; die Admin-Oberflaeche verwendet $WEBSERVER_PORT_SELECTED."
+fi
 
 cat > docker-compose.qnap.yml <<EOF
 services:
@@ -107,6 +176,7 @@ $COMPOSE -f docker-compose.yml -f docker-compose.qnap.yml up -d
 IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
 [ -n "$IP" ] || IP="QNAP-IP"
 say "Fertig. Die Erstinitialisierung kann 10-30 Minuten dauern."
-printf 'Admin:   http://%s:8888/admin/\n' "$IP"
-printf 'Grafana: http://%s:3000  (admin / teslalogger)\n' "$IP"
+printf 'Admin:       http://%s:%s/admin/\n' "$IP" "$WEBSERVER_PORT_SELECTED"
+printf 'Grafana:     http://%s:%s  (admin / teslalogger)\n' "$IP" "$GRAFANA_PORT_SELECTED"
+printf 'TeslaLogger: http://%s:%s\n' "$IP" "$TESLALOGGER_PORT_SELECTED"
 printf 'Status:  %s/teslalogger-qnap status\n' "$INSTALL_DIR"
