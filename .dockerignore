@@ -1,0 +1,10 @@
+.git
+.github
+work
+__pycache__
+*.pyc
+README.md
+SECURITY.md
+qnap-template.json
+install.sh
+assets

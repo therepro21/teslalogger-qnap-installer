@@ -5,3 +5,5 @@ docker-compose.qnap.yml
 backup/
 invoices/
 mysql/
+__pycache__/
+*.pyc

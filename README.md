@@ -1,179 +1,228 @@
-# TeslaLogger QNAP Installer
+# TeslaLogger QNAP Manager
 
-> TeslaLogger mit einer einzigen App-Template-URL in QNAP Container Station 3 installieren – fuer Intel/AMD64 und ARM64, mit automatischer Portpruefung.
+Eine vollständig klickbare Installation und Verwaltung von [TeslaLogger](https://github.com/bassmaster187/TeslaLogger) für QNAP Container Station 3 – ohne SSH, ohne Bash und ohne manuell gepflegte Compose-Dateien.
 
-[![Test installer](https://github.com/therepro21/teslalogger-qnap-installer/actions/workflows/test.yml/badge.svg)](https://github.com/therepro21/teslalogger-qnap-installer/actions/workflows/test.yml)
+[![Validate, test and publish](https://github.com/therepro21/teslalogger-qnap-installer/actions/workflows/ci.yml/badge.svg)](https://github.com/therepro21/teslalogger-qnap-installer/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## App-Template-URL
+> Inoffizielles Community-Projekt; nicht verbunden mit oder unterstützt von Tesla, TeslaLogger, QNAP Systems, Docker, MariaDB oder Grafana Labs.
 
-Diese URL in QNAP Container Station eintragen:
+## QNAP-App-Template-URL
+
+Diese öffentliche URL wird direkt in Container Station 3 eingetragen:
 
 ```text
 https://raw.githubusercontent.com/therepro21/teslalogger-qnap-installer/main/qnap-template.json
 ```
 
-## Installation in Container Station 3
+## Installation – Klick für Klick
 
-1. **Container Station** oeffnen.
-2. **Einstellungen** beziehungsweise **Preferences** waehlen.
-3. Zu **App Templates** wechseln.
+1. Im QNAP App Center **Container Station 3** installieren und öffnen.
+2. In Container Station **Einstellungen / Preferences** öffnen.
+3. **App Templates** auswählen.
 4. **Benutzerdefiniertes Template aktivieren** einschalten.
-5. Die oben angegebene App-Template-URL einfuegen und **Anwenden** waehlen.
-6. Unter **App Templates > Custom Templates** den passenden Eintrag bereitstellen:
-   - `TeslaLogger QNAP Installer (Intel/AMD64)` fuer `x86_64`
-   - `TeslaLogger QNAP Installer (ARM64)` fuer `aarch64`
-7. Im Bereitstellungsdialog bei Bedarf Speicherpfad, Zeitzone oder Ports anpassen und den Bootstrap starten.
+5. Die oben angegebene Raw-GitHub-URL einfügen.
+6. **Anwenden** anklicken.
+7. Zu **App Templates > Custom Templates** wechseln.
+8. Das zur QNAP-CPU passende Template wählen:
+   - **TeslaLogger QNAP Manager (Intel/AMD64)** für `x86_64`
+   - **TeslaLogger QNAP Manager (ARM64)** für `aarch64`
+9. **Deploy / Bereitstellen** anklicken.
+10. Warten, bis der Manager-Container als „Running“ angezeigt wird.
+11. In Container Station beim Manager den automatisch zugewiesenen Host-Port für Container-Port `8080` ablesen.
+12. Das Container-Log öffnen und das einmalig erzeugte Manager-Passwort kopieren.
+13. Im Browser `http://QNAP-IP:ZUGEWIESENER-PORT` öffnen.
+14. Mit Benutzer `admin` und dem Passwort aus dem Container-Log anmelden.
+15. Interne IP, Ports, Zeitzone und optional Domain/HTTPS eintragen.
+16. **Ports prüfen & anwenden** anklicken.
 
-Der Eintrag startet einen kurzlebigen Bootstrap-Container. Dieser richtet den offiziellen TeslaLogger-Mehrcontainer-Stack ein und beendet sich danach mit Exit-Code `0`. Die eigentlichen TeslaLogger-Container laufen anschliessend getrennt weiter und erscheinen in Container Station. Der beendete Bootstrap-Container kann nach erfolgreicher Installation geloescht werden.
+Die erste TeslaLogger-Initialisierung kann auf langsameren NAS-Systemen 10 bis 30 Minuten dauern. Status und Fehlermeldungen erscheinen im Manager.
 
-> **Sicherheitshinweis:** Der Bootstrap benoetigt Zugriff auf `/var/run/docker.sock`. Dieser Zugriff entspricht weitreichenden administrativen Rechten ueber Docker und den QNAP-Host. Verwende deshalb ausschliesslich die HTTPS-URL dieses Repositories und pruefe sie vor der Installation.
+## Manager-Adresse und Sicherheit
 
-## Anpassbare Werte
+Der Manager lauscht intern auf Port `8080`. Das QNAP-Template gibt keinen festen Host-Port vor; Docker wählt automatisch einen freien Port. Dadurch kann die Manager-Installation nicht an einem bereits belegten Host-Port scheitern.
 
-Die folgenden Umgebungsvariablen koennen im QNAP-Bereitstellungsdialog geaendert werden:
+```text
+http://QNAP-IP:AUTOMATISCH_ZUGEWIESENER_PORT
+```
 
-| Variable | Standard | Bedeutung |
+- Benutzer: `admin`
+- Passwort: beim ersten Start kryptografisch zufällig erzeugt
+- Speicherung: ausschließlich im Volume `teslalogger_qnap_manager_data`, Modus `0600`
+- Zugriff: nur private, lokale und Link-Local-Clientadressen werden akzeptiert
+
+**Den Manager-Port niemals am Router ins Internet weiterleiten.** Für administrativen Fernzugriff ausschließlich VPN oder einen korrekt abgesicherten HTTPS-Reverse-Proxy mit zusätzlicher Authentifizierung verwenden.
+
+## Grafische Konfiguration
+
+Im Browser können später jederzeit geändert werden:
+
+| Einstellung | Standard | Bedeutung |
 | --- | --- | --- |
-| `TESLALOGGER_DIR` | `/share/Container/teslalogger` | Persistenter Installations- und Datenpfad |
-| `TESLALOGGER_PORT` | `5010` | Host-Port fuer die TeslaLogger-API |
-| `GRAFANA_PORT` | `3000` | Host-Port fuer Grafana |
-| `WEBSERVER_PORT` | `8888` | Host-Port der Admin-Oberflaeche |
-| `TZ` | `Europe/Berlin` | Zeitzone aller Container |
+| Interne Bind-IP | `0.0.0.0` | QNAP-IP beziehungsweise lokale Schnittstelle für veröffentlichte App-Ports |
+| TeslaLogger-Port | `5010` | TeslaLogger-API, Container-intern `5000` |
+| Grafana-Port | `3000` | Grafana, Container-intern `3000` |
+| Admin-Port | `8888` | TeslaLogger-Adminoberfläche, Container-intern `80` |
+| Zeitzone | `Europe/Berlin` | Zeitzone aller Anwendungscontainer |
+| Domain / externe IP | leer | Später änderbare öffentliche Adresse für Anzeige und Reverse Proxy |
+| Schema | `http` | `http` oder `https` für die externe Adresse |
 
-Der Standard-Bind-Mount des Templates stellt `/share/Container` bereit. Ein eigener `TESLALOGGER_DIR` muss deshalb innerhalb dieses Pfades liegen. Fuer einen anderen QNAP-Share muss im Bereitstellungsdialog zusaetzlich ein entsprechender Bind-Mount hinzugefuegt werden.
+Die Domain ist keine automatische DNS- oder Zertifikatseinrichtung. Der Manager zeigt das passende Reverse-Proxy-Ziel an; DNS, QNAP Reverse Proxy und TLS-Zertifikate werden weiterhin in QTS beziehungsweise beim verwendeten Proxy verwaltet.
 
-## Portkonflikte
+## Portprüfung und bestehende Container
 
-Vor dem Start prueft der Installer:
+Vor der Installation beziehungsweise jeder Portänderung führt der Manager zwei Prüfungen aus:
 
-- bereits laufende Docker-Container,
-- TCP-Listener des QNAP-Hosts, wenn die Installation direkt per SSH erfolgt,
-- und durch eine kurzlebige Docker-Bindprobe, ob der echte Host-Port verwendbar ist.
+1. Er sucht alle laufenden Docker-Container, die den gewünschten Host-Port veröffentlichen.
+2. Er startet kurzzeitig einen minimalen Bind-Testcontainer, um auch Konflikte mit QTS, QuFirewall oder Nicht-Docker-Diensten zu erkennen.
 
-Ist ein Port belegt, wird automatisch der naechste freie Port innerhalb der folgenden 100 Portnummern gewaehlt. Beispiel: Ist `3000` belegt, wird `3001`, danach `3002` usw. getestet. Bei einer erneuten Installation erkennt der Installer die eigenen TeslaLogger-Container und behaelt deren Ports stabil.
+Ist ein Port belegt, wird innerhalb der nächsten 100 Portnummern der erste freie Port gewählt und die Anpassung angezeigt. Beispiel: Läuft bereits ein anderes Grafana auf `3000`, werden `3001`, `3002` usw. geprüft.
 
-| Dienst | Standard | Container-intern | Wird am Host publiziert? |
-| --- | ---: | ---: | --- |
-| TeslaLogger API | `5010` | `5000` | Ja |
-| Grafana | `3000` | `3000` | Ja |
-| Admin-Oberflaeche | `8888` | `80` | Ja |
-| MariaDB | – | `3306` | **Nein** |
-| Watchtower | – | – | **Nein** |
+Eine andere MariaDB auf dem QNAP ist unproblematisch: Die TeslaLogger-MariaDB bleibt ausschließlich im eigenen Compose-Netz und veröffentlicht **keinen** Host-Port `3306`.
 
-Die tatsaechlich ausgewaehlten Ports stehen nach der Installation in `/share/Container/teslalogger/.env`. Der Bootstrap zeigt sie ausserdem in seinem Container-Log an.
+Existieren bereits Container mit den Namen `teslalogger`, `teslalogger-db`, `teslalogger-grafana` oder `teslalogger-webserver`, die nicht von diesem Manager erzeugt wurden, bricht die Einrichtung ab. Vorhandene Container oder Daten werden nicht verändert.
 
-## Nach der Installation
+## Kontrollierte Updates
 
-Mit den tatsaechlich gewaehlten Ports erreichst du:
+Updates werden bewusst im Manager gestartet. Watchtower ist in dieser verwalteten Variante nicht enthalten, da unbeaufsichtigte Updates die geforderte Backup- und Prüfsequenz umgehen würden.
 
-- Admin-Oberflaeche: `http://QNAP-IP:WEBSERVER_PORT/admin/`
-- Grafana: `http://QNAP-IP:GRAFANA_PORT` – Anmeldung standardmaessig mit `admin` / `teslalogger`
-- TeslaLogger API: `http://QNAP-IP:TESLALOGGER_PORT`
+Bei **Backup & Update** geschieht in dieser Reihenfolge:
 
-Die erste Initialisierung kann auf langsameren NAS-Systemen 10 bis 30 Minuten dauern. Tesla-Zugangs- beziehungsweise Fleet-API-Tokens werden erst danach in der TeslaLogger-Admin-Oberflaeche eingetragen und sind niemals Bestandteil dieses Templates.
+1. Konsistenter SQL-Dump der MariaDB
+2. Kurzes Pausieren der schreibenden Anwendungscontainer
+3. Archivierung aller Datei-, Konfigurations-, Dashboard- und Rechnungsvolumes
+4. Speicherung von Konfiguration, Secrets und Backup-Manifest
+5. Markierung der bisherigen Images als lokale Rollback-Images
+6. Laden neuer TeslaLogger-, Grafana- und Webserver-Images
+7. Ausschließliches Ersetzen der Container; Volumes werden wiederverwendet
+8. Prüfung von Containerstatus und Healthchecks
+9. Bei Fehlern verständliche Meldung und erneute Aktivierung der vorherigen Images
 
-## Verwaltung per SSH
+MariaDB bleibt auf `10.4.7` fixiert und wird bei einem normalen Update nicht angehoben. Der Manager verwendet den Major-Tag `:1`. Ein späteres Major-Upgrade erfordert eine bewusst geänderte Template-/Imageversion und eigene Migrationshinweise.
 
-Der Installer legt ein kleines Verwaltungsskript an:
+TeslaLogger veröffentlicht seine drei projektspezifischen Images derzeit nur über bewegliche `latest`-Tags. Der Manager kontrolliert deshalb den Zeitpunkt des Pulls, erstellt vorher zwingend ein Backup und hält lokale Rollback-Tags vor. Ein Container-Recreate ohne Update verwendet vorhandene lokale Images.
 
-```sh
-cd /share/Container/teslalogger
-./teslalogger-qnap status
-./teslalogger-qnap logs
-./teslalogger-qnap update
-./teslalogger-qnap restart
-./teslalogger-qnap stop
-./teslalogger-qnap start
+## Backup und Restore
+
+Ein Backup enthält:
+
+- vollständigen SQL-Dump der MariaDB, wenn die Datenbank läuft
+- alternativ ein Offline-Archiv des MariaDB-Volumes
+- TeslaLogger-Daten und interne Backups
+- Rechnungen
+- Grafana-Datenbank, Dashboards und Plugins
+- SQL-Schema- und temporäre Anwendungsdaten
+- Manager-Konfiguration und zufällig generierte Secrets
+- Compose-Datei und maschinenlesbares Manifest
+
+Backups liegen im persistenten Volume `teslalogger_qnap_backups` und können direkt über die Manager-Oberfläche heruntergeladen werden.
+
+Restore erfordert die zusätzliche Eingabe `RESTORE`. Vor jedem Restore erzeugt der Manager automatisch ein weiteres Sicherheitsbackup, stoppt nur die verwalteten Container, stellt Volumes und Datenbank wieder her und führt anschließend Healthchecks aus.
+
+Backup-Archive enthalten Secrets und möglicherweise personenbezogene Fahrzeug- und Standortdaten. Sie müssen entsprechend geschützt und verschlüsselt aufbewahrt werden.
+
+## Persistente Volumes – niemals löschen
+
+| Volume | Inhalt |
+| --- | --- |
+| `teslalogger_qnap_manager_data` | Manager-Passwort, Konfiguration, Secrets und Compose-Zustand |
+| `teslalogger_qnap_backups` | herunterladbare Backup-Archive |
+| `teslalogger_qnap_mysql` | MariaDB-Datenbank |
+| `teslalogger_qnap_data` | TeslaLogger-Anwendungsdaten |
+| `teslalogger_qnap_app_backup` | interne TeslaLogger-Backups |
+| `teslalogger_qnap_invoices` | Tesla-Rechnungen |
+| `teslalogger_qnap_grafana` | Grafana-Datenbank und Einstellungen |
+| `teslalogger_qnap_grafana_dashboards` | Grafana-Dashboards |
+| `teslalogger_qnap_grafana_plugins` | Grafana-Plugins |
+| `teslalogger_qnap_sqlschema` | TeslaLogger-SQL-Schema |
+| `teslalogger_qnap_tmp` | zwischen TeslaLogger und Webserver geteilte Daten |
+
+Die Anwendungsvolumes sind in Compose als `external: true` markiert und tragen zusätzlich das Label `io.teslalogger.qnap.protected=true`. `docker compose down` kann sie dadurch nicht versehentlich löschen. Container dürfen beliebig ersetzt werden; die Volumes bleiben erhalten.
+
+## Domain oder Reverse Proxy später ändern
+
+1. Manager im Browser öffnen.
+2. Unter **Einrichtung & Netzwerk** Domain/IP und `http` oder `https` ändern.
+3. **Ports prüfen & anwenden** anklicken.
+4. Das angezeigte interne Reverse-Proxy-Ziel in QTS übernehmen.
+5. DNS und Zertifikat außerhalb des Managers prüfen.
+
+Der Manager ändert keine DNS-Zonen, Routerfreigaben oder Zertifikate automatisch.
+
+## Deinstallation
+
+### Anwendung entfernen, Daten behalten
+
+Im Manager **Nur Container entfernen, Daten behalten** anklicken. Die Container und das Compose-Netz werden entfernt; alle oben genannten Volumes bleiben bestehen. Eine spätere erneute Bereitstellung kann dieselben Daten verwenden.
+
+### Vollständige Deinstallation einschließlich Daten
+
+1. Im Manager die Warnhinweise lesen.
+2. Exakt `ALLE DATEN LOESCHEN` eingeben.
+3. **Container und Datenvolumes entfernen** anklicken.
+4. Der Manager erstellt zuerst ein letztes Backup.
+5. Erst danach entfernt er die Anwendungscontainer und Anwendungsvolumes.
+6. Abschließend den Manager-Container in Container Station löschen.
+7. Nur wenn auch Manager-Zugang und Backups endgültig entfernt werden sollen, in Container Station zusätzlich `teslalogger_qnap_manager_data` und `teslalogger_qnap_backups` löschen.
+
+Die beiden vom laufenden Manager selbst verwendeten Volumes werden absichtlich nicht aus dem Manager heraus gelöscht. Dadurch kann eine Fehlbedienung nicht gleichzeitig die letzte Sicherung vernichten.
+
+## Architektur und Images
+
+Unterstützt:
+
+- `linux/amd64`: 64-Bit Intel/AMD-QNAP
+- `linux/arm64`: 64-Bit ARM-QNAP
+
+Nicht unterstützt:
+
+- `linux/arm/v7`, `armhf` und andere 32-Bit-ARM-Systeme
+- QNAP-Modelle ohne Container Station 3 beziehungsweise Docker Compose v2
+- andere CPU-Architekturen wie MIPS
+
+Der Manager verweigert den Start auf nicht unterstützten Architekturen mit einer klaren Fehlermeldung. Die verwendeten TeslaLogger-, Grafana-, Webserver-, MariaDB-, Alpine- und Manager-Images wurden auf vorhandene AMD64- und ARM64-Manifeste geprüft.
+
+## Docker-Socket
+
+Der Manager benötigt `/var/run/docker.sock`, um Volumes anzulegen, Ports zu testen, Compose-Container zu ersetzen und Backups aus Volumes zu erstellen. Zugriff auf diesen Socket entspricht praktisch administrativen Rechten über Docker und damit weitreichenden Rechten auf dem NAS.
+
+Die Nutzung wird begrenzt:
+
+- nur der Manager erhält den Socket
+- der Manager läuft nicht im privilegierten Modus
+- TeslaLogger, MariaDB, Grafana und Webserver erhalten den Socket nicht
+- die Weboberfläche akzeptiert nur lokale/private Client-IP-Adressen
+- zufälliges Passwort, CSRF-Token und restriktive Browser-Header
+- keine Telemetrie und keine Speicherung von GitHub- oder Tesla-Tokens im Image
+
+## Entwicklung und Qualitätssicherung
+
+GitHub Actions führen aus:
+
+- JSON-Validierung des QNAP-Templates
+- Python- und Shell-Syntaxprüfung
+- ShellCheck
+- Docker-Compose-Validierung
+- Gitleaks Secret-Scanning
+- lokalen AMD64-Image-Build
+- Healthcheck-Starttest
+- Recreate-Test für persistente Managerdaten
+- AMD64-/ARM64-Build mit QEMU/Buildx
+- Veröffentlichung eines gemeinsamen Multi-Arch-Manifests in GHCR
+
+Veröffentlichte Manager-Images:
+
+```text
+ghcr.io/therepro21/teslalogger-qnap-manager:1
+ghcr.io/therepro21/teslalogger-qnap-manager:1.0.0
 ```
 
-`update` laedt aktuelle Images und erstellt den Stack mit den bestehenden Einstellungen neu. Vor Aktualisierungen sollte immer ein Backup vorhanden sein.
+## Rechtliche Hinweise
 
-## Alternative Installation per SSH
-
-Falls die App-Template-Funktion nicht verfuegbar ist:
-
-```sh
-sudo -i
-curl -fsSL https://raw.githubusercontent.com/therepro21/teslalogger-qnap-installer/main/install.sh | sh
-```
-
-Alternativ funktioniert auf QNAP-Systemen mit `wget`:
-
-```sh
-sudo -i
-wget -qO- https://raw.githubusercontent.com/therepro21/teslalogger-qnap-installer/main/install.sh | sh
-```
-
-Eigene Werte koennen vorangestellt werden:
-
-```sh
-TESLALOGGER_DIR=/share/Container/teslalogger \
-TESLALOGGER_PORT=15010 \
-GRAFANA_PORT=13000 \
-WEBSERVER_PORT=18888 \
-TZ=Europe/Berlin \
-sh install.sh
-```
-
-## Voraussetzungen und Kompatibilitaet
-
-- QNAP mit Container Station 3 und funktionierendem Docker
-- Internetzugriff auf GitHub, Docker Hub und die vom TeslaLogger-Projekt verwendeten Registries
-- 64-Bit Intel/AMD (`x86_64`) oder 64-Bit ARM (`aarch64`)
-- Schreibbarer QNAP-Share fuer persistente Daten
-
-32-Bit ARM wird nicht angeboten, weil die von TeslaLogger verwendete MariaDB-Konfiguration ein 64-Bit-System voraussetzt. Auf ARM64 aktiviert der Installer den aktuell benoetigten Workaround fuer die SkiaSharp-Kartengenerierung.
-
-Die bei Erstellung dieses Templates verwendeten Images wurden auf vorhandene `linux/amd64`- und `linux/arm64`-Manifeste geprueft: TeslaLogger, TeslaLogger Grafana, TeslaLogger Webserver, MariaDB `10.4.7`, Watchtower und der Docker-CLI-Bootstrap. Da mehrere Upstream-Images den beweglichen Tag `latest` verwenden, wird diese Kompatibilitaet bei spaeteren Upstream-Aenderungen nicht garantiert; vor produktiven Updates sollte ein Backup erstellt werden.
-
-## Funktionsweise
-
-Das QNAP-App-Templateformat beschreibt einzelne Container, TeslaLogger besteht jedoch aus mehreren Diensten. Deshalb verwendet dieses Projekt einen einmaligen Bootstrap:
-
-1. Container Station startet das versionsgebundene offizielle Multi-Arch-Image `docker:29.7.2-cli`.
-2. Das Template bindet den Docker-Socket und `/share/Container` ein.
-3. Der Bootstrap laedt den oeffentlichen Installer aus diesem Repository.
-4. Der Installer prueft Architektur, Speicherpfad und Ports.
-5. Die aktuelle offizielle TeslaLogger-Konfiguration aus dem Zweig `NET8` wird geladen.
-6. Docker Compose startet TeslaLogger, MariaDB, Grafana, Webserver und Watchtower.
-7. Der Bootstrap beendet sich; der TeslaLogger-Stack laeuft weiter.
-
-Dieses Repository enthaelt keinen TeslaLogger-Quellcode und keine Tesla-Zugangsdaten.
-
-## Fehlerbehebung
-
-### Template erscheint nicht
-
-- Pruefen, ob die Raw-URL im Browser ohne Anmeldung erreichbar ist.
-- Container Station nach einer Template-Aenderung neu laden.
-- Sicherstellen, dass Container Station 3 verwendet wird.
-
-### Bootstrap endet mit Fehler
-
-- In Container Station das Log des Bootstrap-Containers oeffnen.
-- Pruefen, ob `/var/run/docker.sock` und `/share/Container` eingebunden wurden.
-- Pruefen, ob GitHub und Docker Hub vom NAS erreichbar sind.
-
-### Oberflaeche ist nicht erreichbar
-
-- Die tatsaechlichen Ports im Bootstrap-Log oder in `.env` pruefen.
-- Den Stackstatus mit `./teslalogger-qnap status` kontrollieren.
-- Bei der Erstinstallation bis zu 30 Minuten warten und `./teslalogger-qnap logs` ansehen.
-- QNAP-Firewall- beziehungsweise QuFirewall-Regeln pruefen.
-
-## Recht, Marken und Haftung
-
-Dieses Projekt ist ein **inoffizielles Community-Projekt** und weder mit Tesla, TeslaLogger, QNAP Systems, Docker, MariaDB noch Grafana Labs verbunden oder von diesen geprueft. Produktnamen werden ausschliesslich zur Beschreibung der Kompatibilitaet verwendet.
-
-- Projektcode und Dokumentation: [MIT-Lizenz](LICENSE)
-- Ausfuehrliche rechtliche Hinweise: [NOTICE.md](NOTICE.md)
-- Drittkomponenten und deren Lizenzquellen: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+- Eigener Code und Dokumentation: [MIT-Lizenz](LICENSE)
+- Recht, Marken, Haftung und Datenschutz: [NOTICE.md](NOTICE.md)
+- Drittkomponenten und Lizenzquellen: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
 - Sicherheitsmodell und Meldungen: [SECURITY.md](SECURITY.md)
-- TeslaLogger-Upstream: [bassmaster187/TeslaLogger](https://github.com/bassmaster187/TeslaLogger)
+- TeslaLogger-Upstream und GPL‑3.0: [bassmaster187/TeslaLogger](https://github.com/bassmaster187/TeslaLogger)
 
-Die Software wird ohne Gewaehrleistung bereitgestellt. Betrieb, Datensicherung, Netzwerksicherheit, Datenschutz und die Einhaltung anwendbarer Vorschriften liegen in der Verantwortung des Betreibers.
-
-## Mitwirken
-
-Fehlerberichte und Pull Requests sind willkommen. Bitte niemals Tesla-Tokens, NAS-Zugangsdaten, oeffentliche IP-Adressen oder vollstaendige Logdateien mit Geheimnissen in Issues veroeffentlichen.
+Fremde Namen werden ausschließlich beschreibend verwendet. Das Projektsymbol ist eigenständig und verwendet keine fremden Logos. Die Software wird ohne Gewährleistung bereitgestellt; Betrieb, Backups, Netzwerkfreigaben, Datenschutz und Einhaltung anwendbarer Vorschriften liegen in der Verantwortung des Betreibers.
