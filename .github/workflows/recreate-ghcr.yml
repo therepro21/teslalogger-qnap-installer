@@ -1,0 +1,48 @@
+name: Recreate GHCR package after repository publication
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  recreate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove the old private package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          status=$(curl --silent --output response.json --write-out '%{http_code}' \
+            --request DELETE \
+            --header "Accept: application/vnd.github+json" \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/users/${GITHUB_REPOSITORY_OWNER}/packages/container/teslalogger-qnap-manager")
+          if [ "$status" != 204 ]; then
+            cat response.json
+            exit 1
+          fi
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Recreate linked multi-arch package
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/teslalogger-qnap-manager:1
+            ghcr.io/${{ github.repository_owner }}/teslalogger-qnap-manager:1.0.0
+            ghcr.io/${{ github.repository_owner }}/teslalogger-qnap-manager:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=1.0.0
