@@ -16,3 +16,5 @@ jobs:
         run: sh -n install.sh
       - name: Run ShellCheck
         uses: ludeeus/action-shellcheck@2.0.0
+      - name: Validate QNAP template JSON
+        run: jq --exit-status '.templates | length == 2 and all(.type == 1 and (.platform == "linux/amd64" or .platform == "linux/arm64"))' qnap-template.json

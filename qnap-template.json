@@ -1,0 +1,64 @@
+{
+  "templates": [
+    {
+      "type": 1,
+      "title": "TeslaLogger QNAP Installer (Intel/AMD64)",
+      "sub_title": "Bootstrap fuer TeslaLogger NET8 auf QNAP Container Station 3",
+      "description": "Installiert den offiziellen TeslaLogger-Mehrcontainer-Stack. Prueft Portkonflikte und waehlt bei Bedarf freie Ports. Der Bootstrap benoetigt Zugriff auf den Docker-Socket und beendet sich nach der Installation.",
+      "logo": "https://raw.githubusercontent.com/therepro21/teslalogger-qnap-installer/main/assets/teslalogger-qnap.svg",
+      "location": "https://github.com/therepro21/teslalogger-qnap-installer",
+      "platform": "linux/amd64",
+      "image": "docker:29.7.2-cli",
+      "command": "sh -c 'wget -qO- https://raw.githubusercontent.com/therepro21/teslalogger-qnap-installer/main/install.sh | sh'",
+      "env": [
+        { "name": "TESLALOGGER_DIR", "value": "/share/Container/teslalogger" },
+        { "name": "TESLALOGGER_PORT", "value": "5010" },
+        { "name": "GRAFANA_PORT", "value": "3000" },
+        { "name": "WEBSERVER_PORT", "value": "8888" },
+        { "name": "TZ", "value": "Europe/Berlin" }
+      ],
+      "labels": [
+        { "name": "org.opencontainers.image.title", "value": "TeslaLogger QNAP Installer Bootstrap" },
+        { "name": "org.opencontainers.image.source", "value": "https://github.com/therepro21/teslalogger-qnap-installer" }
+      ],
+      "volumes": [
+        { "container": "/var/run/docker.sock", "bind": "/var/run/docker.sock" },
+        { "container": "/share/Container", "bind": "/share/Container" }
+      ],
+      "restart_policy": "no",
+      "interactive": false,
+      "tty": false,
+      "privileged": false
+    },
+    {
+      "type": 1,
+      "title": "TeslaLogger QNAP Installer (ARM64)",
+      "sub_title": "Bootstrap fuer TeslaLogger NET8 auf QNAP Container Station 3",
+      "description": "Installiert den offiziellen TeslaLogger-Mehrcontainer-Stack inklusive ARM64-Karten-Workaround. Prueft Portkonflikte und waehlt bei Bedarf freie Ports. Der Bootstrap benoetigt Zugriff auf den Docker-Socket und beendet sich nach der Installation.",
+      "logo": "https://raw.githubusercontent.com/therepro21/teslalogger-qnap-installer/main/assets/teslalogger-qnap.svg",
+      "location": "https://github.com/therepro21/teslalogger-qnap-installer",
+      "platform": "linux/arm64",
+      "image": "docker:29.7.2-cli",
+      "command": "sh -c 'wget -qO- https://raw.githubusercontent.com/therepro21/teslalogger-qnap-installer/main/install.sh | sh'",
+      "env": [
+        { "name": "TESLALOGGER_DIR", "value": "/share/Container/teslalogger" },
+        { "name": "TESLALOGGER_PORT", "value": "5010" },
+        { "name": "GRAFANA_PORT", "value": "3000" },
+        { "name": "WEBSERVER_PORT", "value": "8888" },
+        { "name": "TZ", "value": "Europe/Berlin" }
+      ],
+      "labels": [
+        { "name": "org.opencontainers.image.title", "value": "TeslaLogger QNAP Installer Bootstrap" },
+        { "name": "org.opencontainers.image.source", "value": "https://github.com/therepro21/teslalogger-qnap-installer" }
+      ],
+      "volumes": [
+        { "container": "/var/run/docker.sock", "bind": "/var/run/docker.sock" },
+        { "container": "/share/Container", "bind": "/share/Container" }
+      ],
+      "restart_policy": "no",
+      "interactive": false,
+      "tty": false,
+      "privileged": false
+    }
+  ]
+}

@@ -86,6 +86,20 @@ port_is_available() {
   elif have netstat; then
     netstat -lnt 2>/dev/null | awk 'NR > 2 {print $4}' | grep -Eq "[:.]${port}$" && return 1
   fi
+
+  # Beim Start ueber das QNAP-App-Template laeuft dieses Skript in einem
+  # Bootstrap-Container. Dessen ss/netstat sieht nicht das Host-Netzwerk.
+  # Eine kurzlebige Docker-Bindprobe prueft deshalb den echten QNAP-Host.
+  probe_image="${TESLALOGGER_BOOTSTRAP_IMAGE:-docker:29.7.2-cli}"
+  if docker image inspect "$probe_image" >/dev/null 2>&1; then
+    probe_name="teslalogger-port-check-${port}-$$"
+    if docker run --detach --rm --name "$probe_name" --publish "${port}:2375/tcp" "$probe_image" sh -c 'sleep 10' >/dev/null 2>&1; then
+      docker rm --force "$probe_name" >/dev/null 2>&1 || true
+    else
+      docker rm --force "$probe_name" >/dev/null 2>&1 || true
+      return 1
+    fi
+  fi
   return 0
 }
 
@@ -173,8 +187,12 @@ $COMPOSE -f docker-compose.yml -f docker-compose.qnap.yml pull
 # shellcheck disable=SC2086
 $COMPOSE -f docker-compose.yml -f docker-compose.qnap.yml up -d
 
-IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
-[ -n "$IP" ] || IP="QNAP-IP"
+if [ -f /.dockerenv ]; then
+  IP="QNAP-IP"
+else
+  IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+  [ -n "$IP" ] || IP="QNAP-IP"
+fi
 say "Fertig. Die Erstinitialisierung kann 10-30 Minuten dauern."
 printf 'Admin:       http://%s:%s/admin/\n' "$IP" "$WEBSERVER_PORT_SELECTED"
 printf 'Grafana:     http://%s:%s  (admin / teslalogger)\n' "$IP" "$GRAFANA_PORT_SELECTED"
