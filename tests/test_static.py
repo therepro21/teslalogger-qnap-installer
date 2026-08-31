@@ -37,6 +37,24 @@ class ProjectContractTests(unittest.TestCase):
         source = (ROOT / "qnap_manager.py").read_text()
         self.assertIn('form.get("delete_confirmation") != "ALLE DATEN LOESCHEN"', source)
 
+    def test_every_visible_configuration_field_has_bilingual_help(self):
+        source = (ROOT / "qnap_manager.py").read_text()
+        for key in [
+            "BIND_IP", "TESLALOGGER_PORT", "GRAFANA_PORT", "WEBSERVER_PORT",
+            "TZ", "PUBLIC_HOST", "PUBLIC_SCHEME",
+        ]:
+            self.assertIn(f'"{key}": (', source)
+        self.assertIn('<details class="help">', source)
+        self.assertIn("Deutsch", source)
+        self.assertIn("English", source)
+
+    def test_readme_contains_detailed_german_and_english_qnap_guides(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("## Deutsch: Klick für Klick", readme)
+        self.assertIn("## English: click by click", readme)
+        self.assertIn("Port forwarding", readme)
+        self.assertIn("Manager password:", readme)
+
 
 if __name__ == "__main__":
     unittest.main()

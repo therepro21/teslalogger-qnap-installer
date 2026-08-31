@@ -473,7 +473,46 @@ input,select{box-sizing:border-box;width:100%;margin-top:6px;padding:10px;border
 button,.button{display:inline-block;border:0;border-radius:9px;padding:11px 16px;margin:5px 5px 5px 0;background:#55d6be;color:#092019;font-weight:700;cursor:pointer;text-decoration:none}
 .alt{background:#314b5a!important;color:#e7f1f5!important}.danger{background:#d85b68!important;color:white!important}pre{white-space:pre-wrap;overflow:auto;background:#091218;padding:14px;border-radius:9px;max-height:420px}
 .warn{border-left:4px solid #ffcc4d;padding-left:12px;color:#ffe8a3}.error{color:#ff8994}.ok{color:#55d6be}code{color:#8ce8d6}.volumes{columns:2}
+.field-title{display:flex;align-items:center;gap:7px}.help{display:inline-block;position:relative}.help summary{display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#55d6be;color:#092019;font-weight:800;cursor:pointer;list-style:none}.help summary::-webkit-details-marker{display:none}.help[open] .help-popup{display:block}.help-popup{position:absolute;z-index:10;left:0;top:27px;width:min(360px,80vw);padding:14px;border:1px solid #55d6be;border-radius:10px;background:#091218;color:#e7f1f5;box-shadow:0 10px 30px #0009;font-size:14px;line-height:1.45}.help-popup strong{color:#8ce8d6}.help-popup p{margin:6px 0 12px}.field-hint{display:block;margin-top:5px;color:#9eb1bc;font-size:12px}
 """
+
+FIELD_HELP = {
+    "BIND_IP": (
+        "Interne Bind-IP", "Internal bind IP", "0.0.0.0 (meistens richtig / usually correct)",
+        "Legt fest, auf welcher QNAP-Netzwerkschnittstelle die drei Web-Ports erreichbar sind. Für fast alle Heimnetze 0.0.0.0 stehen lassen. Nur eine konkrete QNAP-IP eintragen, wenn das NAS mehrere Netzwerkanschlüsse/VLANs hat und der Zugriff bewusst auf einen davon begrenzt werden soll. Die QNAP-IP steht in QTS unter Systemsteuerung > Netzwerk & virtueller Switch > Schnittstellen.",
+        "Selects the QNAP network interface that exposes the three web ports. Keep 0.0.0.0 for almost every home network. Enter one specific QNAP IP only if the NAS has multiple adapters/VLANs and access must be limited to one. Find the IP in QTS under Control Panel > Network & Virtual Switch > Interfaces.",
+    ),
+    "TESLALOGGER_PORT": (
+        "TeslaLogger-Port", "TeslaLogger port", "5010 (empfohlen / recommended)",
+        "Host-Port für den TeslaLogger-Dienst. Normalerweise 5010 verwenden. Falls belegt, sucht der Helfer automatisch den nächsten freien Port. Ports müssen zwischen 1 und 65535 liegen. Unter Container Station > Container kann bei anderen Containern in der Spalte/Ansicht Ports geprüft werden, welche Nummern bereits verwendet werden.",
+        "Host port for the TeslaLogger service. Normally use 5010. If occupied, the helper automatically selects the next free port. Ports must be between 1 and 65535. Existing assignments are visible in Container Station > Containers in each container's Ports view.",
+    ),
+    "GRAFANA_PORT": (
+        "Grafana-Port", "Grafana port", "3000 (häufiger Standard / common default)",
+        "Browser-Port für Grafana-Dashboards. 3000 ist der übliche Grafana-Standard. Läuft bereits Grafana oder ein anderer Dienst auf 3000, wählt der Helfer automatisch z. B. 3001. Die bestehende Grafana-Instanz wird nicht verändert.",
+        "Browser port for Grafana dashboards. 3000 is Grafana's common default. If another Grafana or service already uses 3000, the helper automatically chooses e.g. 3001. The existing Grafana instance is not modified.",
+    ),
+    "WEBSERVER_PORT": (
+        "Admin-Port", "Admin port", "8888 (empfohlen / recommended)",
+        "Browser-Port der TeslaLogger-Adminoberfläche, nicht der Port dieses Installationshelfers. Meistens 8888 verwenden. Bei einem Konflikt wird automatisch ein freier Folgeport gewählt. Nach dem Anwenden zeigt der Helfer die fertige Admin-Adresse an.",
+        "Browser port of the TeslaLogger admin page, not the port of this installation helper. Usually use 8888. On conflict, a free following port is selected automatically. The helper shows the finished admin URL after applying.",
+    ),
+    "TZ": (
+        "Zeitzone", "Time zone", "Europe/Berlin (DE/AT häufig / common for DE/AT)",
+        "Beeinflusst Uhrzeiten in TeslaLogger, Grafana, Protokollen und Backups. Das Format ist Region/Stadt. Für Deutschland und Österreich meist Europe/Berlin, für die Schweiz Europe/Zurich. Nicht UTC verwenden, wenn lokale Sommer-/Winterzeit automatisch berücksichtigt werden soll.",
+        "Controls timestamps in TeslaLogger, Grafana, logs and backups. Use the Region/City format. Common examples are Europe/Berlin and Europe/Zurich. Avoid UTC if local daylight-saving changes should be handled automatically.",
+    ),
+    "PUBLIC_HOST": (
+        "Domain / externe IP (optional)", "Domain / external IP (optional)", "leer lassen / leave empty for local-only use",
+        "Nur für die angezeigten externen Links und die Reverse-Proxy-Planung. Im Heimnetz leer lassen. Für externen Zugriff nur den Hostnamen ohne http://, https://, Pfad oder Port eintragen, z. B. teslalogger.example.de. Die Domain wird beim DNS-Anbieter festgelegt; der QNAP-Reverse-Proxy steht in QTS unter Systemsteuerung > Anwendungen > Reverse Proxy. Dieses Feld erstellt weder DNS noch Zertifikat.",
+        "Used only for displayed external links and reverse-proxy planning. Leave empty for LAN-only use. For remote access enter only the hostname without http://, https://, path or port, e.g. teslalogger.example.com. Configure DNS at your DNS provider and QNAP reverse proxy under QTS Control Panel > Applications > Reverse Proxy. This field creates neither DNS nor a certificate.",
+    ),
+    "PUBLIC_SCHEME": (
+        "Externes Schema", "External scheme", "http lokal / https hinter Reverse Proxy",
+        "http wählen, wenn TeslaLogger nur direkt im lokalen Netz per IP geöffnet wird. https wählen, wenn eine Domain über einen eingerichteten HTTPS-Reverse-Proxy mit gültigem Zertifikat verwendet wird. Dadurch wird HTTPS nicht automatisch eingerichtet.",
+        "Choose http when TeslaLogger is opened directly by local IP. Choose https when a domain is served through a configured HTTPS reverse proxy with a valid certificate. This setting does not enable HTTPS by itself.",
+    ),
+}
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -551,16 +590,30 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as exc:  # noqa: BLE001
             status = f"Statusfehler: {exc}"
         refresh = '<meta http-equiv="refresh" content="5">' if job["running"] else ""
+        def help_button(key: str) -> str:
+            de_label, en_label, usual, de_text, en_text = FIELD_HELP[key]
+            return (
+                f'<span class="field-title">{html.escape(de_label)} / {html.escape(en_label)}'
+                f'<details class="help"><summary aria-label="Hilfe / Help">?</summary><div class="help-popup">'
+                f'<strong>Meistens / Usually:</strong><p>{html.escape(usual)}</p>'
+                f'<strong>Deutsch</strong><p>{html.escape(de_text)}</p>'
+                f'<strong>English</strong><p>{html.escape(en_text)}</p></div></details></span>'
+            )
+
+        field_specs = [
+            ("BIND_IP", True, "text"), ("TESLALOGGER_PORT", True, "number"),
+            ("GRAFANA_PORT", True, "number"), ("WEBSERVER_PORT", True, "number"),
+            ("TZ", True, "text"), ("PUBLIC_HOST", False, "text"),
+        ]
         fields = "".join(
-            f'<label>{html.escape(label)}<input name="{key}" value="{html.escape(CONFIG.get(key, ""))}" required></label>'
-            for key, label in [
-                ("BIND_IP", "Interne Bind-IP"), ("TESLALOGGER_PORT", "TeslaLogger-Port"),
-                ("GRAFANA_PORT", "Grafana-Port"), ("WEBSERVER_PORT", "Admin-Port"),
-                ("TZ", "Zeitzone"), ("PUBLIC_HOST", "Domain / externe IP (optional)")
-            ]
+            f'<label>{help_button(key)}<input name="{key}" type="{input_type}" '
+            f'value="{html.escape(CONFIG.get(key, ""))}"'
+            f'{" min=\"1\" max=\"65535\" inputmode=\"numeric\"" if input_type == "number" else ""}'
+            f'{" required" if required else ""}></label>'
+            for key, required, input_type in field_specs
         )
         scheme = CONFIG.get("PUBLIC_SCHEME", "http")
-        fields += f'<label>Externes Schema<select name="PUBLIC_SCHEME"><option{" selected" if scheme == "http" else ""}>http</option><option{" selected" if scheme == "https" else ""}>https</option></select></label>'
+        fields += f'<label>{help_button("PUBLIC_SCHEME")}<select name="PUBLIC_SCHEME"><option{" selected" if scheme == "http" else ""}>http</option><option{" selected" if scheme == "https" else ""}>https</option></select></label>'
         backups = backup_files()
         backup_rows = "".join(
             f'<option value="{html.escape(path.name)}">{html.escape(path.name)} ({path.stat().st_size // 1024 // 1024} MiB)</option>' for path in backups
@@ -571,16 +624,16 @@ class Handler(BaseHTTPRequestHandler):
         public_host = CONFIG.get("PUBLIC_HOST") or "QNAP-IP"
         reverse_target = f"http://{CONFIG.get('BIND_IP') if CONFIG.get('BIND_IP') != '0.0.0.0' else 'QNAP-IP'}:{CONFIG.get('WEBSERVER_PORT')}"
         page = f"""<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">{refresh}<title>TeslaLogger QNAP Manager</title><style>{STYLE}</style></head><body><main>
-<h1>TeslaLogger QNAP Manager</h1><p class="lead">Inoffizielles Community-Projekt – Installation, Konfiguration, Updates und Datensicherung.</p>
-<div class="card"><h2>Einrichtung &amp; Netzwerk</h2><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><div class="grid">{fields}</div><p><button name="action" value="apply">Ports pruefen &amp; anwenden</button></p></form>
-<p>Admin: <code>{scheme}://{html.escape(public_host)}:{CONFIG.get('WEBSERVER_PORT')}/admin/</code><br>Grafana: <code>{scheme}://{html.escape(public_host)}:{CONFIG.get('GRAFANA_PORT')}</code><br>Reverse-Proxy-Ziel: <code>{html.escape(reverse_target)}</code></p>
-<p class="warn">Den Manager-Port niemals ins Internet weiterleiten. Fuer externen Zugriff einen VPN- oder HTTPS-Reverse-Proxy mit eigener Zugriffskontrolle verwenden.</p></div>
-<div class="card"><h2>Zugangsdaten</h2><p>Grafana-Benutzer: <code>admin</code><br>Automatisch erzeugtes Grafana-Passwort: <code>{html.escape(SECRETS['GRAFANA_PASSWORD'])}</code></p><p class="muted">Datenbankkennwoerter werden ebenfalls zufaellig erzeugt, aber nicht angezeigt, da sie nur intern von den Containern benoetigt werden.</p></div>
-<div class="card"><h2>Betrieb &amp; kontrollierte Updates</h2><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><button class="alt" name="action" value="start">Start</button><button class="alt" name="action" value="stop">Stop</button><button class="alt" name="action" value="restart">Neustart</button><button name="action" value="update">Backup &amp; Update</button></form><pre>{html.escape(status)}</pre></div>
-<div class="card"><h2>Backup &amp; Restore</h2><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><button name="action" value="backup">Backup erstellen</button><select name="backup">{backup_rows}</select><label>Fuer Restore exakt <code>RESTORE</code> eingeben<input name="confirmation"></label><button class="danger" name="action" value="restore">Ausgewaehltes Backup wiederherstellen</button></form><p>{download_links}</p><p class="muted">Backups liegen zusaetzlich im QNAP-Ordner <code>{html.escape(str(BACKUP_DIR))}</code>.</p></div>
-<div class="card"><h2>Geschuetzte Volumes – niemals manuell loeschen</h2><p class="volumes">{'<br>'.join(map(html.escape, PROTECTED_VOLUMES))}<br>teslalogger_qnap_manager_data</p></div>
-<div class="card"><h2>Deinstallation</h2><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><button class="alt" name="action" value="uninstall-keep">Nur Container entfernen, Daten behalten</button><label>Fuer vollstaendige Datenloeschung exakt <code>ALLE DATEN LOESCHEN</code> eingeben<input name="delete_confirmation"></label><button class="danger" name="action" value="uninstall-all">Container und Datenvolumes entfernen</button></form></div>
-<div class="card"><h2>Letzter Vorgang</h2><p class="{'ok' if job['ok'] else 'error'}">{html.escape(str(job['title']))}{' – laeuft' if job['running'] else ''}</p><pre>{html.escape(str(job['output']))}</pre></div>
+<h1>TeslaLogger QNAP Manager</h1><p class="lead">Installation, Konfiguration, Updates und Datensicherung / installation, configuration, updates and backups.</p>
+<div class="card"><h2>Einrichtung &amp; Netzwerk / Setup &amp; network</h2><p class="muted">Auf das <strong>?</strong> neben einem Wert klicken, um eine Erklärung, den üblichen Standard und die Fundstelle in QNAP zu sehen. / Click the <strong>?</strong> next to a value for an explanation, the common default and where to find it in QNAP.</p><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><div class="grid">{fields}</div><p><button name="action" value="apply">Ports prüfen &amp; anwenden / Check ports &amp; apply</button></p></form>
+<p>Admin: <code>{scheme}://{html.escape(public_host)}:{CONFIG.get('WEBSERVER_PORT')}/admin/</code><br>Grafana: <code>{scheme}://{html.escape(public_host)}:{CONFIG.get('GRAFANA_PORT')}</code><br>Reverse-Proxy-Ziel / target: <code>{html.escape(reverse_target)}</code></p>
+<p class="warn">Den Manager-Port niemals ins Internet weiterleiten. / Never expose the manager port to the Internet. Für Fernzugriff VPN verwenden; nur die Anwendungsziele über einen abgesicherten HTTPS-Reverse-Proxy veröffentlichen. / Use VPN for remote administration; expose only application targets through a secured HTTPS reverse proxy.</p></div>
+<div class="card"><h2>Zugangsdaten / Credentials</h2><p>Grafana-Benutzer / user: <code>admin</code><br>Automatisch erzeugtes Passwort / generated password: <code>{html.escape(SECRETS['GRAFANA_PASSWORD'])}</code></p><p class="muted">Datenbankkennwörter werden ebenfalls zufällig erzeugt und nur intern verwendet. / Database passwords are also generated randomly and used internally only.</p></div>
+<div class="card"><h2>Betrieb &amp; kontrollierte Updates / Operation &amp; controlled updates</h2><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><button class="alt" name="action" value="start">Start</button><button class="alt" name="action" value="stop">Stop</button><button class="alt" name="action" value="restart">Neustart / Restart</button><button name="action" value="update">Backup &amp; Update</button></form><pre>{html.escape(status)}</pre></div>
+<div class="card"><h2>Backup &amp; Restore</h2><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><button name="action" value="backup">Backup erstellen / Create backup</button><select name="backup">{backup_rows}</select><label>Für Restore exakt / For restore enter exactly <code>RESTORE</code><input name="confirmation"></label><button class="danger" name="action" value="restore">Backup wiederherstellen / Restore backup</button></form><p>{download_links}</p><p class="muted">Backups liegen zusätzlich im QNAP-Volume / Backups are also stored in the QNAP volume: <code>{html.escape(str(BACKUP_DIR))}</code>.</p></div>
+<div class="card"><h2>Geschützte Volumes – niemals löschen / Protected volumes – never delete</h2><p class="volumes">{'<br>'.join(map(html.escape, PROTECTED_VOLUMES))}<br>teslalogger_qnap_manager_data</p></div>
+<div class="card"><h2>Deinstallation / Uninstall</h2><form method="post"><input type="hidden" name="csrf" value="{html.escape(TOKEN)}"><button class="alt" name="action" value="uninstall-keep">Nur Container entfernen, Daten behalten / Remove containers, keep data</button><label>Für vollständige Datenlöschung exakt / To delete all data enter exactly <code>ALLE DATEN LOESCHEN</code><input name="delete_confirmation"></label><button class="danger" name="action" value="uninstall-all">Container und Datenvolumes entfernen / Remove containers and data volumes</button></form></div>
+<div class="card"><h2>Letzter Vorgang / Last operation</h2><p class="{'ok' if job['ok'] else 'error'}">{html.escape(str(job['title']))}{' – läuft / running' if job['running'] else ''}</p><pre>{html.escape(str(job['output']))}</pre></div>
 </main></body></html>"""
         self.send_html(page)
 
